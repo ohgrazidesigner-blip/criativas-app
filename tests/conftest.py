@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.db import Base, SessionLocal, engine
-from app.main import app
+from app.launcher import app
 from app.models import Customer, Material, Product, Supplier
 from app.seed import seed
 
@@ -40,7 +40,7 @@ def operational(client):
 
 def bootstrap_entities(client, costs=True, stock=20):
     client.post('/customers', data={'name':'Cliente Teste','phone':'','email':''})
-    client.post('/suppliers', data={'name':'Fornecedor Teste','contact':''})
+    client.post('/suppliers', data={'name':'Fornecedor Teste','phone':'','email':''})
     with SessionLocal() as db:
         mats = db.scalars(select(Material)).all()
         prod = db.scalar(select(Product))
@@ -50,7 +50,8 @@ def bootstrap_entities(client, costs=True, stock=20):
     if costs:
         cmap={'Caneca Cerâmica Branca 325ml':'8.00','Caixa para caneca':'2.50','Papel sulfite A4':'0.05'}
         for mid,name in data['mats']:
-            client.post(f'/materials/{mid}/cost', data={'cost':cmap[name], 'min_stock':'0'})
+            if name in cmap:
+                client.post(f'/materials/{mid}/cost', data={'cost':cmap[name], 'min_stock':'0'})
     if stock:
         for mid,_ in data['mats']:
             client.post('/inventory/adjust', data={'material_id':mid,'quantity':str(stock),'reason':'Saldo inicial conferido'})
