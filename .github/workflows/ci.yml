@@ -8,7 +8,7 @@ jobs:
     env:
       APP_ENV: test
       SESSION_SECRET: test-session-secret-with-more-than-32-characters
-      CRIATIVAS_INITIAL_PASSWORD: TestPassword123!
+      CRIATIVAS_INITIAL_PASSWORD: Criativas2024!
       COOKIE_SECURE: "0"
     steps:
       - uses: actions/checkout@v4
