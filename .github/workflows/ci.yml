@@ -1,14 +1,26 @@
 name: CI
-on:
-  push:
-  pull_request:
+
+on: [push, pull_request]
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      APP_ENV: test
+      SESSION_SECRET: test-session-secret-with-more-than-32-characters
+      CRIATIVAS_INITIAL_PASSWORD: TestPassword123!
+      COOKIE_SECURE: "0"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
-      - run: pip install -r requirements-dev.txt
-      - run: pytest -q
+          python-version: "3.13"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+      - name: Run migrations on a fresh database
+        run: |
+          rm -f criativas.db
+          alembic upgrade head
+      - name: Run automated tests
+        run: pytest -q
