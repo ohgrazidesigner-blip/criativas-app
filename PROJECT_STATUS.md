@@ -4,6 +4,8 @@
 
 **Software:** implementação funcional v1.0 criada a partir do handoff. A suíte automatizada valida os fluxos críticos e a aplicação inicia em banco novo via Alembic.
 
+**Repositório:** código-fonte expandido e versionado diretamente na branch `main`.
+
 ## Validado automaticamente
 
 - custo incompleto bloqueia confirmação;
