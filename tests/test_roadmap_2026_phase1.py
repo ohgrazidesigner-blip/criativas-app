@@ -118,6 +118,14 @@ def test_material_category_is_persisted(manager):
         assert assignment.category.name == "Embalagens"
 
 
+
+def test_catalog_uses_2026_grouped_view(manager):
+    response = manager.get("/catalog")
+    assert response.status_code == 200
+    assert 'href="/materials/new"' in response.text
+    assert 'href="/products/new"' in response.text
+
+
 def test_product_create_and_edit_support_more_than_three_materials(manager):
     with SessionLocal() as db:
         materials = db.scalars(select(Material).order_by(Material.name)).all()
@@ -165,5 +173,8 @@ def test_product_create_and_edit_support_more_than_three_materials(manager):
         items = db.scalars(
             select(TechnicalSheetItem).where(TechnicalSheetItem.product_id == product_id)
         ).all()
-        assert len(items) == 4
-        assert min(item.version for item in items) >= 2
+        latest_version = max(item.version for item in items)
+        latest_items = [item for item in items if item.version == latest_version]
+        assert len(items) == 8
+        assert len(latest_items) == 4
+        assert latest_version >= 2

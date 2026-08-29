@@ -41,14 +41,38 @@
           {% endif %}
           <div class="mini catalog-sheet">
             <strong>Ficha técnica:</strong>
-            {% for ti in p.technical_items %}
+            {% set sheet_versions = p.technical_items | map(attribute="version") | list %}
+            {% set current_version = (sheet_versions|max) if sheet_versions else 1 %}
+            {% for ti in p.technical_items if ti.version == current_version %}
               {{ti.material.name}} {{ti.qty}} {{ti.material.unit}}{% if not loop.last %}, {% endif %}
             {% else %}
               <span class="subtle">não configurada</span>
             {% endfor %}
           </div>
           {% if ref and user.role.value=='MANAGER' %}
-          <div class="support">Referência de custos existente: {{ref.material_total|money}} em insumos · venda de referência {{ref.sale_price|money}}.</div>
+          <div class="reference-costs">
+            <strong>Custos reais informados por peça</strong>
+            <div class="mini subtle">Baseado no arquivo de custos já validado pela gestão. Estes valores permanecem referência econômica e não alteram o ledger físico.</div>
+            <div class="reference-cost-list">
+              {% for label, amount, mapped_material in ref.components %}
+              <div class="mini reference-cost-row">
+                <span>{{label}}{% if not mapped_material and amount > 0 %} <span class="subtle">· referência ainda sem vínculo físico de estoque</span>{% endif %}</span>
+                <strong>{{amount|money}}</strong>
+              </div>
+              {% endfor %}
+              <div class="mini reference-cost-row reference-total">
+                <span><strong>Total de insumos informado</strong></span><strong>{{ref.material_total|money}}</strong>
+              </div>
+              <div class="mini reference-cost-row">
+                <span>Preço de venda informado</span><strong>{{ref.sale_price|money}}</strong>
+              </div>
+            </div>
+            {% if p.name == 'Caneca personalizada' %}
+            <div class="support">Papel A4 e Tinta/Arte já entram na referência econômica, mas ainda não geram baixa física de estoque porque a referência informa custo por peça, não qual SKU e quantidade física foram consumidos.</div>
+            {% elif p.name == 'Camisa personalizada' %}
+            <div class="support">Produto mantido inativo até confirmar mão de obra e o consumo físico de Papel A4 e Tinta/Arte. Assim ele não entra em pedidos com uma ficha técnica incompleta.</div>
+            {% endif %}
+          </div>
           {% endif %}
         </article>
         {% endfor %}

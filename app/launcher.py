@@ -1,11 +1,13 @@
 from . import main as main_module
 from .enhancements import register_enhancements
 from .roadmap_2026 import install_roadmap_2026
+from .versioned_products_2026 import install_versioned_product_editor
 
 app = main_module.app
 
 register_enhancements(app)
 install_roadmap_2026(main_module)
+install_versioned_product_editor(main_module)
 
 
 def _promote_static_get_route(path: str, before_path: str) -> None:

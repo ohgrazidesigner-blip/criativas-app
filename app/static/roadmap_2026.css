@@ -7,7 +7,7 @@
 .filter-chip.selected{border-color:var(--brand2);background:var(--brand50);color:var(--brand)}
 .filter-chip.selected:before{content:"✓";margin-right:8px}
 .filter-chip:focus-visible,.btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
-.status-pill{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.status-pill{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border;radius:999px;font-size:12px;font-weight:700}
 .status-pill.danger{background:var(--danger-bg);color:var(--danger);border:1px solid #f7c8c3}
 .status-pill.success{background:var(--success-bg);color:var(--success);border:1px solid #c7ebd0}
 .status-pill.warning{background:var(--warning-bg);color:var(--warning);border:1px solid #f0dda5}
@@ -42,3 +42,8 @@
   .inventory-filters .actions{align-items:stretch}
   .compact-field{min-width:0;width:100%}
 }
+
+.reference-costs{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.reference-cost-list{margin-top:8px}
+.reference-cost-row{display:flex;justify-content:space-between;gap:12px;padding:3px 0}
+.reference-total{border-top:1px solid var(--line);padding-top:7px;margin-top:5px}

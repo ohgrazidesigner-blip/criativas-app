@@ -20,6 +20,11 @@ def install_catalog_enhancements(main_module) -> None:
     app = main_module.app
     if getattr(app.state, "catalog_enhancements_installed", False):
         return
+    # Criativas 2026 owns the catalog route when Phase 1 is installed. The
+    # legacy refinement remains available for the preserved 2024 baseline but
+    # must not replace the 2026 route during seed()/startup.
+    if getattr(app.state, "roadmap_2026_phase1_installed", False):
+        return
 
     _remove_route(app, "/catalog", "GET")
 
