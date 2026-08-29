@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>{% if product %}Editar produto{% else %}Cadastrar produto{% endif %}</h1>
+    <p>Categoria, preço, tempo, perda e ficha técnica ficam editáveis sem limite fixo de insumos.</p>
+  </div>
+  <a class="btn btn-secondary" href="/catalog">Voltar</a>
+</div>
+
+<form class="stack" method="post" action="{% if product %}/products/{{product.id}}/edit{% else %}/products{% endif %}">
+  <div class="card">
+    <h2>Dados do produto</h2>
+    <div class="grid grid-2">
+      <div class="field">
+        <label for="product-name">Nome</label>
+        <input id="product-name" name="name" value="{{product.name if product else ''}}" required>
+      </div>
+      <div class="field">
+        <label for="product-category">Categoria</label>
+        <input id="product-category" name="category" list="category-options" value="{{current_category}}" placeholder="Ex.: Canecas">
+      </div>
+      <div class="field">
+        <label for="base-price">Preço base</label>
+        <input id="base-price" name="base_price" type="number" step="0.01" value="{{product.base_price if product else 0}}">
+      </div>
+      <div class="field">
+        <label for="labor-minutes">Mão de obra (min)</label>
+        <input id="labor-minutes" name="labor_minutes" type="number" min="0" value="{{product.labor_minutes if product else 0}}">
+      </div>
+      <div class="field">
+        <label for="expected-loss">Perda esperada (%)</label>
+        <input id="expected-loss" name="expected_loss_rate" type="number" min="0" step="0.01" value="{{(product.expected_loss_rate * 100) if product else 0}}">
+      </div>
+      <div class="field">
+        <label for="lead-time">Lead time (dias)</label>
+        <input id="lead-time" name="standard_lead_time_days" type="number" min="0" value="{{product.standard_lead_time_days if product else 3}}">
+      </div>
+      <div class="field">
+        <label for="product-active">Status</label>
+        <select id="product-active" name="active">
+          <option value="1" {% if not product or product.active %}selected{% endif %}>Ativo</option>
+          <option value="0" {% if product and not product.active %}selected{% endif %}>Inativo</option>
+        </select>
+      </div>
+    </div>
+    <datalist id="category-options">
+      {% for category in categories %}<option value="{{category}}">{% endfor %}
+    </datalist>
+  </div>
+
+  <div class="card">
+    <div class="catalog-item-head">
+      <div>
+        <h2>Ficha técnica</h2>
+        <p class="subtle">Adicione quantos insumos forem necessários. Cada linha define material e consumo por unidade.</p>
+      </div>
+      <button class="secondary" type="button" id="add-material-row">+ Adicionar insumo</button>
+    </div>
+
+    <div id="technical-sheet" class="technical-sheet-editor">
+      {% for item in technical_items %}
+      <div class="technical-row">
+        <div class="field">
+          <label>Material</label>
+          <select name="material_id">
+            <option value="">Selecione</option>
+            {% for material in materials %}
+            <option value="{{material.id}}" {% if material.id==item.material_id %}selected{% endif %}>{{material.name}}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Quantidade</label>
+          <input name="quantity" type="number" step="0.0001" min="0" value="{{item.qty}}">
+        </div>
+        <button class="danger remove-material-row" type="button">Remover</button>
+      </div>
+      {% endfor %}
+      {% if not technical_items %}
+      <div class="technical-row">
+        <div class="field">
+          <label>Material</label>
+          <select name="material_id">
+            <option value="">Selecione</option>
+            {% for material in materials %}<option value="{{material.id}}">{{material.name}}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label>Quantidade</label>
+          <input name="quantity" type="number" step="0.0001" min="0" value="0">
+        </div>
+        <button class="danger remove-material-row" type="button">Remover</button>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" type="submit">{% if product %}Salvar alterações{% else %}Criar produto{% endif %}</button>
+    <a class="btn btn-secondary" href="/catalog">Cancelar</a>
+  </div>
+</form>
+
+<template id="technical-row-template">
+  <div class="technical-row">
+    <div class="field">
+      <label>Material</label>
+      <select name="material_id">
+        <option value="">Selecione</option>
+        {% for material in materials %}<option value="{{material.id}}">{{material.name}}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label>Quantidade</label>
+      <input name="quantity" type="number" step="0.0001" min="0" value="0">
+    </div>
+    <button class="danger remove-material-row" type="button">Remover</button>
+  </div>
+</template>
+
+<script>
+(() => {
+  const list = document.getElementById('technical-sheet');
+  const template = document.getElementById('technical-row-template');
+  const add = document.getElementById('add-material-row');
+  const bindRemove = (root) => {
+    root.querySelectorAll('.remove-material-row').forEach((button) => {
+      button.onclick = () => {
+        const rows = list.querySelectorAll('.technical-row');
+        if (rows.length > 1) button.closest('.technical-row').remove();
+        else {
+          const row = button.closest('.technical-row');
+          row.querySelector('select').value = '';
+          row.querySelector('input').value = '0';
+        }
+      };
+    });
+  };
+  add.addEventListener('click', () => {
+    const fragment = template.content.cloneNode(true);
+    list.appendChild(fragment);
+    bindRemove(list);
+  });
+  bindRemove(list);
+})();
+</script>
+{% endblock %}

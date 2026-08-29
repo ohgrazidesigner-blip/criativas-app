@@ -1,1 +1,107 @@
-{% extends "base.html" %}{% block content %}<div class="top"><div><h1>Pedidos</h1><p>Comercial, pagamento, produção e fulfillment permanecem independentes.</p></div><a class="btn btn-primary" href="/orders/new">Novo pedido</a></div>{% if orders %}<table class="responsive"><thead><tr><th>Pedido</th><th>Cliente</th><th>Comercial</th><th>Produção</th><th>Pagamento</th><th>Compromisso</th></tr></thead><tbody>{% for o in orders %}{% set ps=payment_summary(o) %}<tr><td data-label="Pedido"><a href="/orders/{{o.id}}"><strong>#{{o.number}}</strong></a></td><td data-label="Cliente">{{o.customer.name}}</td><td data-label="Comercial"><span class="badge {{o.commercial_status.value}}">{{o.commercial_status.value}}</span></td><td data-label="Produção">{% if o.production %}<span class="badge {{o.production.status.value}}">{{o.production.status.value}}</span>{% else %}—{% endif %}</td><td data-label="Pagamento"><span class="badge {{ps[2]}}">{{ps[2]}}</span>{% if user.role.value=='MANAGER' %}<div class="mini">{{ps[0]|money}} recebido</div>{% endif %}</td><td data-label="Compromisso">{{o.current_promised_at or '—'}}</td></tr>{% endfor %}</tbody></table>{% else %}<div class="empty">Nenhum pedido ainda.</div>{% endif %}{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>Pedidos</h1>
+    <p>Encontre pedidos combinando busca e filtros sem perder contexto.</p>
+  </div>
+  <a class="btn btn-primary" href="/orders/new">Novo pedido</a>
+</div>
+
+<form class="card order-filters" method="get" action="/orders">
+  <div class="filters-grid">
+    <div class="field filter-search">
+      <label for="order-q">Busca global</label>
+      <input id="order-q" name="q" value="{{filters.q}}" placeholder="Cliente, telefone ou nº do pedido">
+    </div>
+    <div class="field">
+      <label for="date-from">De</label>
+      <input id="date-from" name="date_from" type="date" value="{{filters.date_from}}">
+    </div>
+    <div class="field">
+      <label for="date-to">Até</label>
+      <input id="date-to" name="date_to" type="date" value="{{filters.date_to}}">
+    </div>
+    <div class="field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="">Todos</option>
+        {% for status in statuses %}
+        <option value="{{status.value}}" {% if filters.status==status.value %}selected{% endif %}>{{status.value}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="customer">Cliente</label>
+      <select id="customer" name="customer_id">
+        <option value="">Todos</option>
+        {% for customer in customers %}
+        <option value="{{customer.id}}" {% if filters.customer_id==customer.id %}selected{% endif %}>{{customer.name}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="payment-method">Pagamento</label>
+      <select id="payment-method" name="payment_method">
+        <option value="">Todos</option>
+        {% for method in payment_methods %}
+        <option value="{{method.value}}" {% if filters.payment_method==method.value %}selected{% endif %}>{{method.value}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="fulfillment-method">Entrega</label>
+      <select id="fulfillment-method" name="fulfillment_method">
+        <option value="">Todas</option>
+        {% for method in fulfillment_methods %}
+        <option value="{{method.value}}" {% if filters.fulfillment_method==method.value %}selected{% endif %}>{{method.value}}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <div class="actions filter-actions">
+    <button class="primary" type="submit">Buscar</button>
+    <a class="btn btn-secondary" href="/orders">Limpar filtros</a>
+  </div>
+</form>
+
+<div class="filter-chips" aria-label="Atalhos de status">
+  <a class="filter-chip {% if not filters.status %}selected{% endif %}" href="/orders">Todos</a>
+  <a class="filter-chip {% if filters.status=='CONFIRMED' %}selected{% endif %}" href="/orders?status=CONFIRMED">Confirmados</a>
+  <a class="filter-chip {% if filters.status=='DRAFT' %}selected{% endif %}" href="/orders?status=DRAFT">Rascunhos</a>
+  <a class="filter-chip {% if filters.status=='CANCELLED' %}selected{% endif %}" href="/orders?status=CANCELLED">Cancelados</a>
+</div>
+
+{% if orders %}
+<table class="responsive">
+  <thead>
+    <tr>
+      <th>Pedido</th>
+      <th>Cliente</th>
+      <th>Status</th>
+      <th>Pagamento</th>
+      <th>Entrega</th>
+      <th>Data combinada</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for o in orders %}
+    {% set ps=payment_summary(o) %}
+    <tr>
+      <td data-label="Pedido"><a href="/orders/{{o.id}}"><strong>#{{o.number}}</strong></a></td>
+      <td data-label="Cliente">{{o.customer.name}}</td>
+      <td data-label="Status"><span class="badge {{o.commercial_status.value}}">{{o.commercial_status.value}}</span></td>
+      <td data-label="Pagamento">
+        {{o.expected_payment_method.value}}
+        <div class="mini"><span class="badge {{ps[2]}}">{{ps[2]}}</span>{% if user.role.value=='MANAGER' %} · {{ps[0]|money}} recebido{% endif %}</div>
+      </td>
+      <td data-label="Entrega">{{o.fulfillment_method.value}}</td>
+      <td data-label="Data combinada">{{o.current_promised_at or '—'}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhum pedido corresponde aos filtros.</div>
+{% endif %}
+{% endblock %}

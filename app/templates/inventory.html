@@ -1,1 +1,97 @@
-{% extends "base.html" %}{% block content %}<div class="top"><div><h1>Estoque</h1><p>Saldo físico vem exclusivamente do ledger. Reserva não é movimentação física.</p></div></div><table class="responsive"><thead><tr><th>Material</th><th>On Hand</th><th>Reservado</th><th>Disponível</th><th>Mínimo</th>{% if user.role.value=='MANAGER' %}<th>Ajuste</th>{% endif %}</tr></thead><tbody>{% for r in rows %}<tr><td data-label="Material"><strong>{{r.material.name}}</strong></td><td data-label="On Hand">{{r.on_hand}} {{r.material.unit}}</td><td data-label="Reservado">{{r.reserved}}</td><td data-label="Disponível">{{r.available}}</td><td data-label="Mínimo">{{r.material.min_stock}}</td>{% if user.role.value=='MANAGER' %}<td data-label="Ajuste"><form class="actions" method="post" action="/inventory/adjust"><input type="hidden" name="material_id" value="{{r.material.id}}"><input style="max-width:110px" name="quantity" type="number" step="0.001" placeholder="+/- qtd" required><input style="max-width:180px" name="reason" placeholder="Motivo" required><button class="secondary">Registrar</button></form></td>{% endif %}</tr>{% endfor %}</tbody></table><div class="card section"><h2>Movimentações recentes</h2><table class="responsive"><thead><tr><th>Data</th><th>Material</th><th>Tipo</th><th>Qtd.</th><th>Motivo</th></tr></thead><tbody>{% for t in txs %}<tr><td data-label="Data">{{t.created_at}}</td><td data-label="Material">{{t.material.name}}</td><td data-label="Tipo">{{t.tx_type.value}}</td><td data-label="Qtd.">{{t.qty_signed}}</td><td data-label="Motivo">{{t.reason or '—'}}</td></tr>{% else %}<tr><td colspan="5">Sem movimentações.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>Estoque</h1>
+    <p>Disponível, mínimo e categoria ficam visíveis no mesmo contexto. O saldo físico continua vindo do ledger.</p>
+  </div>
+</div>
+
+<form class="card inventory-filters" method="get" action="/inventory">
+  <div class="actions">
+    <div class="field compact-field">
+      <label for="inventory-category">Categoria</label>
+      <select id="inventory-category" name="category">
+        <option value="">Todas as categorias</option>
+        {% for category in categories %}
+        <option value="{{category}}" {% if filters.category==category %}selected{% endif %}>{{category}}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <label class="check-filter">
+      <input type="checkbox" name="low_stock" value="1" {% if filters.low_stock %}checked{% endif %}>
+      <span>Somente estoque baixo</span>
+    </label>
+    <button class="primary" type="submit">Aplicar</button>
+    <a class="btn btn-secondary" href="/inventory">Limpar</a>
+  </div>
+</form>
+
+{% if rows %}
+<table class="responsive">
+  <thead>
+    <tr>
+      <th>Material</th>
+      <th>Categoria</th>
+      <th>Em mãos</th>
+      <th>Reservado</th>
+      <th>Disponível</th>
+      <th>Mínimo</th>
+      <th>Status</th>
+      {% if user.role.value=='MANAGER' %}<th>Ajuste</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for r in rows %}
+    <tr class="{% if r.is_low %}stock-low-row{% endif %}">
+      <td data-label="Material"><strong>{{r.material.name}}</strong></td>
+      <td data-label="Categoria">{{r.category}}</td>
+      <td data-label="Em mãos">{{r.on_hand}} {{r.material.unit}}</td>
+      <td data-label="Reservado">{{r.reserved}}</td>
+      <td data-label="Disponível">{{r.available}}</td>
+      <td data-label="Mínimo">{{r.material.min_stock}}</td>
+      <td data-label="Status">
+        {% if r.is_low %}
+        <span class="status-pill danger">Abaixo do mínimo</span>
+        {% else %}
+        <span class="status-pill success">OK</span>
+        {% endif %}
+      </td>
+      {% if user.role.value=='MANAGER' %}
+      <td data-label="Ajuste">
+        <form class="actions" method="post" action="/inventory/adjust">
+          <input type="hidden" name="material_id" value="{{r.material.id}}">
+          <input style="max-width:110px" name="quantity" type="number" step="0.001" placeholder="+/- qtd" required>
+          <input style="max-width:180px" name="reason" placeholder="Motivo" required>
+          <button class="secondary">Registrar</button>
+        </form>
+      </td>
+      {% endif %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<div class="empty">Nenhum material corresponde aos filtros.</div>
+{% endif %}
+
+<div class="card section">
+  <h2>Movimentações recentes</h2>
+  <table class="responsive">
+    <thead><tr><th>Data</th><th>Material</th><th>Tipo</th><th>Qtd.</th><th>Motivo</th></tr></thead>
+    <tbody>
+      {% for t in txs %}
+      <tr>
+        <td data-label="Data">{{t.created_at}}</td>
+        <td data-label="Material">{{t.material.name}}</td>
+        <td data-label="Tipo">{{t.tx_type.value}}</td>
+        <td data-label="Qtd.">{{t.qty_signed}}</td>
+        <td data-label="Motivo">{{t.reason or '—'}}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5">Sem movimentações.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

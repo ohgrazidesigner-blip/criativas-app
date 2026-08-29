@@ -1,16 +1,15 @@
-from .main import app
+from . import main as main_module
 from .enhancements import register_enhancements
+from .roadmap_2026 import install_roadmap_2026
+
+app = main_module.app
 
 register_enhancements(app)
+install_roadmap_2026(main_module)
 
 
 def _promote_static_get_route(path: str, before_path: str) -> None:
-    """Keep specific GET routes ahead of dynamic parameter routes.
-
-    FastAPI/Starlette resolves routes in declaration order. Enhancements replace
-    /orders/new after /orders/{order_id} already exists, so without this reorder
-    the literal word 'new' is captured as an order_id and returns 404.
-    """
+    """Keep specific GET routes ahead of dynamic parameter routes."""
     routes = app.router.routes
     target = next(
         (

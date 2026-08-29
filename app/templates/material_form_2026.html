@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>{% if material %}Editar material{% else %}Cadastrar material{% endif %}</h1>
+    <p>Categoria, unidade, custo e estoque mínimo ficam no mesmo cadastro.</p>
+  </div>
+  <a class="btn btn-secondary" href="/catalog">Voltar</a>
+</div>
+
+<div class="card form-card">
+  <form class="stack" method="post" action="{% if material %}/materials/{{material.id}}/edit{% else %}/materials/new{% endif %}">
+    <div class="grid grid-2">
+      <div class="field">
+        <label for="material-name">Nome</label>
+        <input id="material-name" name="name" value="{{material.name if material else ''}}" required>
+      </div>
+      <div class="field">
+        <label for="material-category">Categoria</label>
+        <input id="material-category" name="category" list="category-options" value="{{current_category}}" placeholder="Ex.: Sublimação">
+      </div>
+      <div class="field">
+        <label for="material-unit">Unidade</label>
+        <input id="material-unit" name="unit" value="{{material.unit if material else 'un'}}" required>
+      </div>
+      <div class="field">
+        <label for="material-cost">Custo atual</label>
+        <input id="material-cost" name="current_cost" type="number" step="0.0001" value="{{material.current_cost if material and material.current_cost is not none else ''}}" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label for="material-min">Estoque mínimo</label>
+        <input id="material-min" name="min_stock" type="number" step="0.001" value="{{material.min_stock if material else 0}}">
+      </div>
+      <div class="field">
+        <label for="material-active">Status</label>
+        <select id="material-active" name="active">
+          <option value="1" {% if not material or material.active %}selected{% endif %}>Ativo</option>
+          <option value="0" {% if material and not material.active %}selected{% endif %}>Inativo</option>
+        </select>
+      </div>
+    </div>
+    <datalist id="category-options">
+      {% for category in categories %}<option value="{{category}}">{% endfor %}
+    </datalist>
+    <div class="actions">
+      <button class="primary" type="submit">{% if material %}Salvar alterações{% else %}Salvar material{% endif %}</button>
+      <a class="btn btn-secondary" href="/catalog">Cancelar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -4,105 +4,95 @@
 <div class="top">
   <div>
     <h1>Catálogo</h1>
-    <p>Produtos e insumos. Custos alterados afetam vendas futuras, nunca snapshots confirmados.</p>
+    <p>Categorias organizam produtos e materiais. Alterações afetam vendas futuras; snapshots confirmados permanecem históricos.</p>
   </div>
+  {% if user.role.value=='MANAGER' %}
+  <div class="actions">
+    <a class="btn btn-secondary" href="/materials/new">Novo material</a>
+    <a class="btn btn-primary" href="/products/new">Novo produto</a>
+  </div>
+  {% endif %}
 </div>
 
-<div class="grid grid-2">
-  <div class="card">
+<div class="grid grid-2 catalog-columns">
+  <section class="card">
     <h2>Produtos</h2>
-    {% for p in products %}
-      {% set ref = refs.get(p.name) %}
-      <div class="muted-box" style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start">
-          <div>
-            <strong>{{p.name}}</strong>
-            <div class="mini">{{p.labor_minutes}} min · lead time {{p.standard_lead_time_days}} dias</div>
-          </div>
-          {% if not p.active %}<span class="badge badge-warning">Pendente de ficha técnica</span>{% endif %}
+    {% for category, rows in product_groups.items() %}
+      <div class="catalog-group">
+        <div class="catalog-group-title">
+          <h3>{{category}}</h3>
+          <span class="badge">{{rows|length}}</span>
         </div>
-
-        {% if user.role.value=='MANAGER' %}
-          <div class="mini" style="margin-top:8px">Preço base atual: <strong>{{p.base_price|money}}</strong></div>
-        {% endif %}
-
-        <div class="mini" style="margin-top:8px">
-          <strong>Ficha técnica operacional:</strong>
-          {% for ti in p.technical_items %}
-            {{ti.material.name}} {{ti.qty}} {{ti.material.unit}}{% if not loop.last %}, {% endif %}
-          {% else %}
-            <span class="subtle">não configurada</span>
-          {% endfor %}
-        </div>
-
-        {% if ref and user.role.value=='MANAGER' %}
-        <div class="section" style="border-top:1px solid var(--line);padding-top:12px;margin-top:12px">
-          <strong>Custos reais informados por peça</strong>
-          <div class="mini subtle">Baseado no arquivo de custos enviado pela gestão. Estes valores não são dados sintéticos.</div>
-          <div style="margin-top:8px">
-            {% for label, amount, mapped_material in ref.components %}
-              <div class="mini" style="display:flex;justify-content:space-between;gap:12px;padding:3px 0">
-                <span>{{label}}{% if not mapped_material and amount > 0 %} <span class="subtle">· referência ainda sem vínculo físico de estoque</span>{% endif %}</span>
-                <strong>{{amount|money}}</strong>
-              </div>
-            {% endfor %}
-            <div class="mini" style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:7px;margin-top:5px">
-              <span><strong>Total de insumos informado</strong></span><strong>{{ref.material_total|money}}</strong>
+        {% for p in rows %}
+        {% set ref = refs.get(p.name) %}
+        <article class="catalog-item">
+          <div class="catalog-item-head">
+            <div>
+              <strong>{{p.name}}</strong>
+              <div class="mini subtle">{{p.labor_minutes}} min · lead time {{p.standard_lead_time_days}} dias</div>
             </div>
-            <div class="mini" style="display:flex;justify-content:space-between;gap:12px;padding-top:4px">
-              <span>Preço de venda informado</span><strong>{{ref.sale_price|money}}</strong>
+            <div class="actions">
+              {% if not p.active %}<span class="status-pill warning">Inativo</span>{% endif %}
+              {% if user.role.value=='MANAGER' %}<a class="btn btn-secondary btn-compact" href="/products/{{p.id}}/edit">Editar</a>{% endif %}
             </div>
           </div>
-          {% if p.name == 'Caneca personalizada' %}
-          <div class="support" style="margin-top:8px">Papel A4 e Tinta/Arte já entram na referência econômica, mas ainda não geram baixa física de estoque porque o arquivo informa custo por peça, não qual SKU e quantidade física foram consumidos.</div>
-          {% elif p.name == 'Camisa personalizada' %}
-          <div class="support" style="margin-top:8px">Produto mantido inativo até confirmar mão de obra e o consumo físico de Papel A4 e Tinta/Arte. Assim ele não entra em pedidos com uma ficha técnica incompleta.</div>
+          {% if user.role.value=='MANAGER' %}
+          <div class="mini">Preço base: <strong>{{p.base_price|money}}</strong> · perda esperada {{p.expected_loss_rate|pct}}</div>
           {% endif %}
+          <div class="mini catalog-sheet">
+            <strong>Ficha técnica:</strong>
+            {% for ti in p.technical_items %}
+              {{ti.material.name}} {{ti.qty}} {{ti.material.unit}}{% if not loop.last %}, {% endif %}
+            {% else %}
+              <span class="subtle">não configurada</span>
+            {% endfor %}
+          </div>
+          {% if ref and user.role.value=='MANAGER' %}
+          <div class="support">Referência de custos existente: {{ref.material_total|money}} em insumos · venda de referência {{ref.sale_price|money}}.</div>
+          {% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">Sem produtos.</div>
+    {% endfor %}
+  </section>
+
+  <section class="card">
+    <h2>Materiais</h2>
+    {% for category, rows in material_groups.items() %}
+      <div class="catalog-group">
+        <div class="catalog-group-title">
+          <h3>{{category}}</h3>
+          <span class="badge">{{rows|length}}</span>
         </div>
-        {% endif %}
+        {% for m in rows %}
+        <article class="catalog-item">
+          <div class="catalog-item-head">
+            <div>
+              <strong>{{m.name}}</strong>
+              <div class="mini subtle">Unidade {{m.unit}} · mínimo {{m.min_stock}}</div>
+            </div>
+            <div class="actions">
+              {% if not m.active %}<span class="status-pill warning">Inativo</span>{% endif %}
+              {% if user.role.value=='MANAGER' %}<a class="btn btn-secondary btn-compact" href="/materials/{{m.id}}/edit">Editar</a>{% endif %}
+            </div>
+          </div>
+          {% if user.role.value=='MANAGER' %}
+          <div class="mini">Custo atual: <strong>{{m.current_cost|money if m.current_cost is not none else 'INCOMPLETO'}}</strong></div>
+          <form class="actions inline-cost-form" method="post" action="/materials/{{m.id}}/cost">
+            <input name="cost" type="number" step="0.0001" value="{{m.current_cost or ''}}" placeholder="Custo" required>
+            <input name="min_stock" type="number" step="0.001" value="{{m.min_stock}}" placeholder="Mínimo">
+            <input name="category" type="hidden" value="{{material_categories.get(m.id,'')}}">
+            <button class="secondary">Salvar custo</button>
+          </form>
+          {% endif %}
+        </article>
+        {% endfor %}
       </div>
-    {% else %}<div class="empty">Sem produtos.</div>{% endfor %}
-  </div>
-
-  <div class="card">
-    <h2>Insumos</h2>
-    <p class="mini subtle">Itens recuperados do controle legado. Custos atuais só são preenchidos quando existe evidência recente suficiente.</p>
-    {% for m in materials %}
-      <div style="border-bottom:1px solid var(--line);padding:12px 0">
-        <strong>{{m.name}}</strong>
-        <div class="mini subtle">Unidade: {{m.unit}} · custo: {% if user.role.value=='MANAGER' %}{{m.current_cost|money if m.current_cost is not none else 'INCOMPLETO'}}{% else %}omitido{% endif %}</div>
-        {% if user.role.value=='MANAGER' %}
-        <form class="actions" method="post" action="/materials/{{m.id}}/cost">
-          <input style="max-width:130px" name="cost" type="number" step="0.0001" value="{{m.current_cost or ''}}" placeholder="Custo" required>
-          <input style="max-width:120px" name="min_stock" type="number" step="0.001" value="{{m.min_stock}}" placeholder="Mínimo">
-          <button class="secondary">Salvar</button>
-        </form>
-        {% endif %}
-      </div>
+    {% else %}
+      <div class="empty">Sem materiais.</div>
     {% endfor %}
-  </div>
+  </section>
 </div>
-
-{% if user.role.value=='MANAGER' %}
-<div class="card section">
-  <h2>Novo produto</h2>
-  <form class="stack" method="post" action="/products">
-    <div class="grid grid-2">
-      <div class="field"><label>Nome</label><input name="name" required></div>
-      <div class="field"><label>Preço base</label><input name="base_price" type="number" step="0.01" value="0"></div>
-      <div class="field"><label>Minutos de mão de obra</label><input name="labor_minutes" type="number" value="0"></div>
-      <div class="field"><label>Perda esperada (%)</label><input name="expected_loss_rate" type="number" step="0.01" value="0"></div>
-      <div class="field"><label>Lead time (dias)</label><input name="standard_lead_time_days" type="number" value="3"></div>
-    </div>
-    <h3>Ficha técnica v1</h3>
-    {% for n in range(1,4) %}
-      <div class="grid grid-2">
-        <select name="material_{{n}}"><option value="">Sem material</option>{% for m in materials %}<option value="{{m.id}}">{{m.name}}</option>{% endfor %}</select>
-        <input name="qty_{{n}}" type="number" step="0.0001" value="0" placeholder="Quantidade">
-      </div>
-    {% endfor %}
-    <button class="primary">Criar produto</button>
-  </form>
-</div>
-{% endif %}
 {% endblock %}

@@ -1,0 +1,44 @@
+.order-filters,.inventory-filters{margin-bottom:18px}
+.filters-grid{display:grid;grid-template-columns:minmax(260px,2fr) repeat(2,minmax(140px,1fr));gap:14px}
+.filter-search{grid-column:span 1}
+.filter-actions{margin-top:14px}
+.filter-chips{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px}
+.filter-chip{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 16px;border:1px solid var(--line);border-radius:999px;text-decoration:none;color:var(--text);background:#f7f5f8;font-weight:650}
+.filter-chip.selected{border-color:var(--brand2);background:var(--brand50);color:var(--brand)}
+.filter-chip.selected:before{content:"✓";margin-right:8px}
+.filter-chip:focus-visible,.btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.status-pill{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.status-pill.danger{background:var(--danger-bg);color:var(--danger);border:1px solid #f7c8c3}
+.status-pill.success{background:var(--success-bg);color:var(--success);border:1px solid #c7ebd0}
+.status-pill.warning{background:var(--warning-bg);color:var(--warning);border:1px solid #f0dda5}
+.stock-low-row{background:#fffafa}
+.compact-field{min-width:220px}
+.check-filter{display:inline-flex;align-items:center;gap:10px;min-height:44px;padding:0 4px;font-weight:650}
+.check-filter input{width:20px;min-height:20px;height:20px}
+.catalog-columns{align-items:start}
+.catalog-group+.catalog-group{margin-top:26px}
+.catalog-group-title{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.catalog-group-title h3{margin:0}
+.catalog-item{padding:16px 0;border-bottom:1px solid var(--line)}
+.catalog-item:last-child{border-bottom:0}
+.catalog-item-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:8px}
+.catalog-sheet{margin-top:8px;line-height:1.55}
+.btn-compact{min-height:44px;padding:9px 12px}
+.inline-cost-form{margin-top:10px}
+.inline-cost-form input{max-width:145px}
+.form-card{max-width:980px}
+.technical-sheet-editor{display:grid;gap:12px}
+.technical-row{display:grid;grid-template-columns:minmax(240px,1fr) minmax(140px,220px) auto;gap:12px;align-items:end;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.technical-row .danger{min-width:104px}
+@media(max-width:900px){
+  .filters-grid{grid-template-columns:1fr}
+  .filter-search{grid-column:auto}
+  .filter-chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .filter-chip{width:100%}
+  .catalog-item-head{align-items:flex-start}
+  .technical-row{grid-template-columns:1fr}
+  .technical-row .danger{width:100%}
+  .inline-cost-form input{max-width:none}
+  .inventory-filters .actions{align-items:stretch}
+  .compact-field{min-width:0;width:100%}
+}
