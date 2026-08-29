@@ -1,3 +1,72 @@
-{% extends "base.html" %}{% block content %}<div class="top"><div><h1>{% if user.role.value=='MANAGER' %}Visão Geral{% else %}Hoje{% endif %}</h1><p>{% if user.role.value=='MANAGER' %}Saúde financeira e atenção operacional.{% else %}O que precisa acontecer agora, sem exposição de custos ou margem.{% endif %}</p></div><a class="btn btn-primary" href="/orders/new">Novo pedido</a></div>
-{% if kpis %}<div class="grid grid-5"><div class="card kpi"><div class="label">Resultado</div><div class="value">{{kpis.result|money}}</div></div><div class="card kpi"><div class="label">Margem</div><div class="value">{{kpis.margin|pct}}</div><div class="support">Margem agregada, custo completo</div></div><div class="card kpi"><div class="label">Receita</div><div class="value">{{kpis.revenue|money}}</div></div><div class="card kpi"><div class="label">Recebido</div><div class="value">{{kpis.received|money}}</div></div><div class="card kpi"><div class="label">A receber</div><div class="value">{{kpis.receivable|money}}</div></div></div><div class="grid grid-4 section"><div class="card"><strong>{{kpis.late}}</strong><div class="danger-text">Atrasados</div></div><div class="card"><strong>{{kpis.risk}}</strong><div class="warning-text">Em risco</div></div><div class="card"><strong>{{kpis.today}}</strong><div>Para hoje</div></div><div class="card"><strong>{{kpis.ready}}</strong><div class="success-text">Prontos</div></div></div>{% endif %}
-<div class="grid grid-2 section"><div class="card"><h2>Produções em atenção</h2>{% for p in productions %}<p><a href="/production/{{p.id}}"><strong>#{{p.order.number}}</strong></a> · {{p.status.value}} · {{p.order.customer.name}}</p>{% else %}<div class="empty">Nenhuma produção em atenção.</div>{% endfor %}</div><div class="card"><h2>Próximos compromissos</h2>{% for o in deliveries %}<p><a href="/orders/{{o.id}}"><strong>#{{o.number}}</strong></a> · {{o.customer.name}} · {{o.current_promised_at or 'Sem data combinada'}}</p>{% else %}<div class="empty">Nenhum pedido confirmado.</div>{% endfor %}</div></div>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<div class="top">
+  <div>
+    <h1>{% if user.role.value=='MANAGER' %}Visão Geral{% else %}Hoje{% endif %}</h1>
+    <p>{% if user.role.value=='MANAGER' %}Decisões financeiras, capacidade de produzir e integridade operacional em uma única leitura.{% else %}O que precisa acontecer agora, sem exposição de custos ou margem.{% endif %}</p>
+  </div>
+  <a class="btn btn-primary" href="/orders/new">Novo pedido</a>
+</div>
+
+{% if kpis %}
+<div class="grid grid-5">
+  <div class="card kpi"><div class="label">Resultado</div><div class="value">{{kpis.result|money}}</div></div>
+  <div class="card kpi"><div class="label">Margem</div><div class="value">{{kpis.margin|pct}}</div><div class="support">Margem agregada = soma dos resultados ÷ soma das receitas</div></div>
+  <div class="card kpi"><div class="label">Receita</div><div class="value">{{kpis.revenue|money}}</div></div>
+  <div class="card kpi"><div class="label">Recebido</div><div class="value">{{kpis.received|money}}</div></div>
+  <div class="card kpi"><div class="label">A receber</div><div class="value">{{kpis.receivable|money}}</div></div>
+</div>
+
+<div class="grid grid-4 section">
+  <div class="card"><strong>{{kpis.late}}</strong><div class="danger-text">Atrasados</div></div>
+  <div class="card"><strong>{{kpis.risk}}</strong><div class="warning-text">Em risco</div></div>
+  <div class="card"><strong>{{kpis.today}}</strong><div>Para hoje</div></div>
+  <div class="card"><strong>{{kpis.ready}}</strong><div class="success-text">Prontos</div></div>
+</div>
+
+{% if decision %}
+<div class="section">
+  <h2>O que estes dados ajudam a decidir</h2>
+  <div class="grid grid-4">
+    <div class="card">
+      <div class="label">1 · O pedido vale a pena?</div>
+      <h3>Custo completo antes de confirmar</h3>
+      <p class="subtle">Cada pedido considera materiais, mão de obra, rateio fixo e perda esperada. Frete da empresa e taxa de pagamento entram no resultado do pedido.</p>
+      <a href="/orders">Ver pedidos</a>
+    </div>
+    <div class="card">
+      <div class="label">2 · O negócio está saudável?</div>
+      <h3>Produto mais rentável</h3>
+      {% if decision.profitable_product %}
+        <div class="value" style="font-size:22px;font-weight:750">{{decision.profitable_product.name}}</div>
+        <div class="success-text" style="margin-top:6px">Resultado acumulado: {{decision.profitable_product.result|money}}</div>
+        <div class="support">Resultado absoluto, com custos completos e rateio proporcional dos valores do pedido.</div>
+      {% else %}<p class="subtle">Ainda não há pedidos confirmados com snapshot de custo.</p>{% endif %}
+    </div>
+    <div class="card">
+      <div class="label">3 · Dá para produzir o que foi vendido?</div>
+      <h3>{{decision.blocked_productions}} produção(ões) bloqueada(s)</h3>
+      <p class="subtle">Bloqueio indica pedido confirmado sem material reservado suficiente. Estoque físico e reservado continuam separados.</p>
+      <a href="/inventory">Ver estoque</a>
+    </div>
+    <div class="card">
+      <div class="label">4 · Algo está inconsistente?</div>
+      {% if decision.reconciliation_issues %}
+        <h3 class="danger-text">{{decision.reconciliation_issues|length}} ponto(s) para revisar</h3>
+        <p class="subtle">A autochecagem encontrou estados que precisam de conferência.</p>
+      {% else %}
+        <h3 class="success-text">Autochecagem sem divergências</h3>
+        <p class="subtle">Nenhuma inconsistência estrutural foi encontrada agora.</p>
+      {% endif %}
+      <a href="/settings">Abrir reconciliação</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+
+<div class="grid grid-2 section">
+  <div class="card"><h2>Produções em atenção</h2>{% for p in productions %}<p><a href="/production/{{p.id}}"><strong>#{{p.order.number}}</strong></a> · {{p.status.value}} · {{p.order.customer.name}}</p>{% else %}<div class="empty">Nenhuma produção em atenção.</div>{% endfor %}</div>
+  <div class="card"><h2>Próximos compromissos</h2>{% for o in deliveries %}<p><a href="/orders/{{o.id}}"><strong>#{{o.number}}</strong></a> · {{o.customer.name}} · {{o.current_promised_at or 'Sem data combinada'}}</p>{% else %}<div class="empty">Nenhum pedido confirmado.</div>{% endfor %}</div>
+</div>
+{% endblock %}
