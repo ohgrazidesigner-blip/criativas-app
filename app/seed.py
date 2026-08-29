@@ -12,9 +12,10 @@ from .enhancement_models import SupplierMaterial
 from .models import Company, Material, Product, Role, Supplier, TechnicalSheetItem, User
 
 
-# Names and supplier relationships below come from the legacy Criativas workbook
-# (COMPRAS / ESTOQUE / TABELA DE PREÇO). Historical stock balances and old
-# purchase prices are deliberately not imported as current truth.
+# Most names and supplier relationships below come from the legacy Criativas
+# workbook (COMPRAS / ESTOQUE / TABELA DE PREÇO). Papel sulfite A4 is retained
+# as an operational material already used by existing production flows. No old
+# stock balance or historical price is imported as current truth for any item.
 LEGACY_MATERIALS = [
     ("Tecido Sublimático OBM A4", "folha"),
     ("Fita térmica 3300x5 mm", "rolo"),
@@ -24,6 +25,7 @@ LEGACY_MATERIALS = [
     ("Caneca mágica preta 325ml", "un"),
     ("Caixa para caneca", "un"),
     ("Papel sublimático A4", "folha"),
+    ("Papel sulfite A4", "folha"),
     ("Tinta sublimática CMYK 100ml", "frasco"),
     ("Caneca Cerâmica Branca 325ml", "un"),
     ("Caneca polímero branca 325ml", "un"),
