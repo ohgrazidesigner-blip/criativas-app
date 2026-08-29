@@ -1,144 +1,99 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="top">
-  <div>
-    <h1>Cadastros</h1>
-    <p>Clientes, endereços, fornecedores e os insumos que cada fornecedor atende.</p>
-  </div>
-</div>
-
+<div class="top"><div><h1>Cadastros</h1><p>Clientes, endereços, fornecedores e os insumos que cada fornecedor atende.</p></div></div>
 <div class="grid grid-2">
   <div class="card">
-    <h2>Novo cliente</h2>
+    <h2>Clientes</h2>
     <form class="stack" method="post" action="/customers">
       <div class="grid grid-2">
-        <div class="field"><label>Nome</label><input name="name" placeholder="Nome do cliente" required></div>
-        <div class="field"><label>Telefone</label><input name="phone" type="tel" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="Somente números"></div>
-        <div class="field"><label>E-mail</label><input name="email" type="email" placeholder="cliente@email.com"></div>
-        <div class="field"><label>CEP</label><input name="postal_code" inputmode="numeric" placeholder="CEP"></div>
+        <div class="field"><label>Nome</label><input name="name" required></div>
+        <div class="field"><label>Telefone</label><input name="phone" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="Somente números"></div>
+        <div class="field"><label>E-mail</label><input name="email" type="email"></div>
+        <div class="field"><label>CEP</label><input name="postal_code" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')"></div>
       </div>
-      <h3>Endereço de entrega</h3>
-      <div class="grid grid-2">
-        <div class="field"><label>Endereço</label><input name="address_line" placeholder="Rua, avenida, condomínio..."></div>
-        <div class="field"><label>Número</label><input name="address_number" placeholder="Número"></div>
-        <div class="field"><label>Complemento</label><input name="address_complement" placeholder="Apto, bloco, referência..."></div>
-        <div class="field"><label>Bairro</label><input name="neighborhood" placeholder="Bairro"></div>
-        <div class="field"><label>Cidade</label><input name="city" placeholder="Cidade"></div>
-        <div class="field"><label>Estado</label><input name="state" placeholder="UF / Estado"></div>
+      <h3>Endereço</h3>
+      <div class="grid grid-3">
+        <div class="field"><label>Rua / Avenida</label><input name="address_line"></div>
+        <div class="field"><label>Número</label><input name="address_number"></div>
+        <div class="field"><label>Complemento</label><input name="address_complement"></div>
+        <div class="field"><label>Bairro</label><input name="neighborhood"></div>
+        <div class="field"><label>Cidade</label><input name="city"></div>
+        <div class="field"><label>UF</label><input name="state" maxlength="2"></div>
       </div>
       <button class="secondary">Cadastrar cliente</button>
     </form>
-  </div>
 
-  <div class="card">
-    <h2>Novo fornecedor</h2>
-    {% if user.role.value=='MANAGER' %}
-    <form class="stack" method="post" action="/suppliers">
-      <div class="field"><label>Nome</label><input name="name" placeholder="Nome do fornecedor" required></div>
-      <div class="grid grid-2">
-        <div class="field"><label>Telefone</label><input name="phone" type="tel" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="Somente números"></div>
-        <div class="field"><label>E-mail</label><input name="email" type="email" placeholder="fornecedor@email.com"></div>
-      </div>
-      <details class="muted-box">
-        <summary><strong>Quais insumos este fornecedor fornece?</strong></summary>
-        <div class="grid grid-2 section">
-          {% for m in materials %}
-          <label><input style="width:auto;min-height:auto" type="checkbox" name="material_ids" value="{{m.id}}"> {{m.name}}</label>
-          {% endfor %}
-        </div>
-      </details>
-      <button class="secondary">Cadastrar fornecedor</button>
-    </form>
-    {% else %}
-    <p class="subtle">Somente Gestão pode cadastrar ou editar fornecedores.</p>
-    {% endif %}
-  </div>
-</div>
-
-<div class="section grid grid-2">
-  <div class="card">
-    <h2>Clientes cadastrados</h2>
-    {% for c in customers %}
-      {% set a = addresses.get(c.id) %}
+    <div class="section">
+      {% for c in customers %}
+      {% set a = customer_addresses.get(c.id) %}
       <div class="muted-box" style="margin-bottom:12px">
         <strong>{{c.name}}</strong>
-        <div class="mini subtle" style="margin-top:5px">
-          {% if c.phone %}{{c.phone}}{% endif %}{% if c.phone and c.email %} · {% endif %}{% if c.email %}{{c.email}}{% endif %}
-        </div>
-        {% if a and (a.address_line or a.city or a.neighborhood) %}
-        <div class="mini" style="margin-top:7px">
-          {{a.address_line or ''}}{% if a.number %}, {{a.number}}{% endif %}{% if a.complement %} · {{a.complement}}{% endif %}<br>
-          {% if a.neighborhood %}{{a.neighborhood}}{% endif %}{% if a.city %}{% if a.neighborhood %} · {% endif %}{{a.city}}{% endif %}{% if a.state %}/{{a.state}}{% endif %}{% if a.postal_code %} · CEP {{a.postal_code}}{% endif %}
-        </div>
-        {% else %}
-        <div class="mini warning-text" style="margin-top:7px">Endereço de entrega ainda não informado.</div>
-        {% endif %}
+        <div class="mini subtle">{{c.phone or 'Sem telefone'}}{% if c.email %} · {{c.email}}{% endif %}</div>
+        {% if a and (a.address_line or a.city) %}<div class="mini subtle">{{a.address_line or ''}}{% if a.number %}, {{a.number}}{% endif %}{% if a.neighborhood %} · {{a.neighborhood}}{% endif %}{% if a.city %} · {{a.city}}{% endif %}{% if a.state %}/{{a.state}}{% endif %}</div>{% endif %}
         <details class="section">
           <summary><strong>Editar cliente</strong></summary>
           <form class="stack section" method="post" action="/customers/{{c.id}}">
             <div class="grid grid-2">
               <div class="field"><label>Nome</label><input name="name" value="{{c.name}}" required></div>
-              <div class="field"><label>Telefone</label><input name="phone" type="tel" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" value="{{c.phone or ''}}"></div>
+              <div class="field"><label>Telefone</label><input name="phone" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" value="{{c.phone or ''}}"></div>
               <div class="field"><label>E-mail</label><input name="email" type="email" value="{{c.email or ''}}"></div>
-              <div class="field"><label>CEP</label><input name="postal_code" value="{{a.postal_code if a else ''}}"></div>
-              <div class="field"><label>Endereço</label><input name="address_line" value="{{a.address_line if a else ''}}"></div>
+              <div class="field"><label>CEP</label><input name="postal_code" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" value="{{a.postal_code if a else ''}}"></div>
+            </div>
+            <div class="grid grid-3">
+              <div class="field"><label>Rua / Avenida</label><input name="address_line" value="{{a.address_line if a else ''}}"></div>
               <div class="field"><label>Número</label><input name="address_number" value="{{a.number if a else ''}}"></div>
               <div class="field"><label>Complemento</label><input name="address_complement" value="{{a.complement if a else ''}}"></div>
               <div class="field"><label>Bairro</label><input name="neighborhood" value="{{a.neighborhood if a else ''}}"></div>
               <div class="field"><label>Cidade</label><input name="city" value="{{a.city if a else ''}}"></div>
-              <div class="field"><label>Estado</label><input name="state" value="{{a.state if a else ''}}"></div>
+              <div class="field"><label>UF</label><input name="state" maxlength="2" value="{{a.state if a else ''}}"></div>
             </div>
             <button class="secondary">Salvar alterações</button>
           </form>
         </details>
       </div>
-    {% else %}
-      <div class="empty">Nenhum cliente.</div>
-    {% endfor %}
+      {% else %}<div class="empty">Nenhum cliente.</div>{% endfor %}
+    </div>
   </div>
 
   <div class="card">
-    <h2>Fornecedores cadastrados</h2>
-    {% for s in suppliers %}
+    <h2>Fornecedores</h2>
+    {% if user.role.value=='MANAGER' %}
+    <form class="stack" method="post" action="/suppliers">
+      <div class="field"><label>Nome</label><input name="name" required></div>
+      <div class="grid grid-2">
+        <div class="field"><label>Telefone</label><input name="phone" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" placeholder="Somente números"></div>
+        <div class="field"><label>E-mail</label><input name="email" type="email"></div>
+      </div>
+      <div class="field"><label>Insumos fornecidos</label><select name="material_ids" multiple size="8">{% for m in materials %}<option value="{{m.id}}">{{m.name}}</option>{% endfor %}</select><div class="support">Selecione um ou mais insumos. No computador, use Ctrl para selecionar vários.</div></div>
+      <button class="secondary">Cadastrar fornecedor</button>
+    </form>
+    {% endif %}
+
+    <div class="section">
+      {% for s in suppliers %}
       {% set p = supplier_profiles.get(s.id) %}
-      {% set links = supplier_links.get(s.id, []) %}
-      {% set supplied_ids = links|map(attribute='material_id')|list %}
+      {% set mids = supplier_materials.get(s.id, []) %}
       <div class="muted-box" style="margin-bottom:12px">
         <strong>{{s.name}}</strong>
-        <div class="mini subtle" style="margin-top:5px">
-          {% if p and p.phone %}{{p.phone}}{% endif %}{% if p and p.phone and p.email %} · {% endif %}{% if p and p.email %}{{p.email}}{% endif %}
-          {% if (not p or (not p.phone and not p.email)) and s.contact %}Contato legado: {{s.contact}}{% endif %}
-        </div>
-        <div class="mini" style="margin-top:8px"><strong>Insumos:</strong>
-          {% if links %}
-            {% for link in links %}{{link.material.name}}{% if not loop.last %}, {% endif %}{% endfor %}
-          {% else %}<span class="subtle">não especificados</span>{% endif %}
-        </div>
+        <div class="mini subtle">{{p.phone if p and p.phone else 'Sem telefone'}}{% if p and p.email %} · {{p.email}}{% endif %}{% if (not p or (not p.phone and not p.email)) and s.contact %} · Contato legado: {{s.contact}}{% endif %}</div>
+        <div class="mini" style="margin-top:8px"><strong>Insumos:</strong> {% for m in materials %}{% if m.id in mids %}{{m.name}}{% if not loop.last %}, {% endif %}{% endif %}{% endfor %}{% if not mids %}<span class="subtle">não especificados</span>{% endif %}</div>
         {% if user.role.value=='MANAGER' %}
         <details class="section">
           <summary><strong>Editar fornecedor</strong></summary>
           <form class="stack section" method="post" action="/suppliers/{{s.id}}">
             <div class="field"><label>Nome</label><input name="name" value="{{s.name}}" required></div>
             <div class="grid grid-2">
-              <div class="field"><label>Telefone</label><input name="phone" type="tel" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" value="{{p.phone if p else ''}}"></div>
-              <div class="field"><label>E-mail</label><input name="email" type="email" value="{{p.email if p else ''}}"></div>
+              <div class="field"><label>Telefone</label><input name="phone" inputmode="numeric" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" value="{{p.phone if p and p.phone else ''}}"></div>
+              <div class="field"><label>E-mail</label><input name="email" type="email" value="{{p.email if p and p.email else ''}}"></div>
             </div>
-            <details class="muted-box">
-              <summary><strong>Insumos fornecidos</strong></summary>
-              <div class="grid grid-2 section">
-                {% for m in materials %}
-                <label><input style="width:auto;min-height:auto" type="checkbox" name="material_ids" value="{{m.id}}" {% if m.id in supplied_ids %}checked{% endif %}> {{m.name}}</label>
-                {% endfor %}
-              </div>
-            </details>
+            <div class="field"><label>Insumos fornecidos</label><select name="material_ids" multiple size="8">{% for m in materials %}<option value="{{m.id}}" {% if m.id in mids %}selected{% endif %}>{{m.name}}</option>{% endfor %}</select></div>
             <button class="secondary">Salvar alterações</button>
           </form>
         </details>
         {% endif %}
       </div>
-    {% else %}
-      <div class="empty">Nenhum fornecedor.</div>
-    {% endfor %}
+      {% else %}<div class="empty">Nenhum fornecedor.</div>{% endfor %}
+    </div>
   </div>
 </div>
 {% endblock %}
