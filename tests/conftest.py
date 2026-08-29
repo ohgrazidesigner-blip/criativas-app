@@ -43,10 +43,16 @@ def bootstrap_entities(client, costs=True, stock=20):
     client.post('/suppliers', data={'name':'Fornecedor Teste','phone':'','email':''})
     with SessionLocal() as db:
         mats = db.scalars(select(Material)).all()
-        prod = db.scalar(select(Product))
+        prod = db.scalar(select(Product).where(Product.name == 'Caneca personalizada'))
         customer = db.scalar(select(Customer).where(Customer.name=='Cliente Teste'))
         supplier = db.scalar(select(Supplier).where(Supplier.name=='Fornecedor Teste'))
         data = {'mats': [(m.id,m.name) for m in mats], 'product_id':prod.id, 'customer_id':customer.id, 'supplier_id':supplier.id}
+        if not costs:
+            # This helper explicitly requests an incomplete-cost scenario. Clear
+            # seeded real costs only inside the isolated test database.
+            for material in mats:
+                material.current_cost = None
+            db.commit()
     if costs:
         cmap={'Caneca Cerâmica Branca 325ml':'8.00','Caixa para caneca':'2.50','Papel sulfite A4':'0.05'}
         for mid,name in data['mats']:
