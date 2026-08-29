@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import sys
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -11,21 +12,20 @@ from .enhancement_models import SupplierMaterial
 from .models import Company, Material, Product, Role, Supplier, TechnicalSheetItem, User
 
 
-# Material names and supplier relationships are grounded in the legacy Criativas
-# inventory/purchase workbook. Historical balances and historical prices are NOT
-# imported as current truth because they are old and contain inconsistencies.
+# Names and supplier relationships below come from the legacy Criativas workbook
+# (COMPRAS / ESTOQUE / TABELA DE PREÇO). Historical stock balances and old
+# purchase prices are deliberately not imported as current truth.
 LEGACY_MATERIALS = [
-    ("Caneca Cerâmica Branca 325ml", "un"),
-    ("Caixa para caneca", "un"),
-    ("Papel sulfite A4", "folha"),
     ("Tecido Sublimático OBM A4", "folha"),
     ("Fita térmica 3300x5 mm", "rolo"),
     ("Power Film V4 50x100 cm", "folha"),
     ("Caneca colorida preta 325ml", "un"),
     ("Caneca colorida rosa 325ml", "un"),
     ("Caneca mágica preta 325ml", "un"),
+    ("Caixa para caneca", "un"),
     ("Papel sublimático A4", "folha"),
     ("Tinta sublimática CMYK 100ml", "frasco"),
+    ("Caneca Cerâmica Branca 325ml", "un"),
     ("Caneca polímero branca 325ml", "un"),
     ("Camisa poliéster branca M", "un"),
     ("Caixa para caneca com cola", "un"),
@@ -54,7 +54,7 @@ LEGACY_SUPPLIER_MATERIALS = {
         "Caixa para caneca",
     ],
     "Economizou": ["Papel sublimático A4", "Tinta sublimática CMYK 100ml"],
-    "Provideo": ["Caneca Cerâmica Branca 325ml"],
+    "Provideo": ["Papel sublimático A4", "Tinta sublimática CMYK 100ml", "Caneca Cerâmica Branca 325ml"],
     "Cia do Silk": ["Caneca Cerâmica Branca 325ml", "Caneca polímero branca 325ml", "Caixa para caneca com cola"],
     "Atacado das Camisas": ["Camisa poliéster branca M"],
     "Kasa Andrade": [
@@ -99,12 +99,12 @@ def seed(db: Session):
 
     materials: dict[str, Material] = {}
     for name, unit in LEGACY_MATERIALS:
-        m = db.scalar(select(Material).where(Material.company_id == company.id, Material.name == name))
-        if not m:
-            m = Material(company_id=company.id, name=name, unit=unit, current_cost=None, min_stock=Decimal("0"))
-            db.add(m)
+        material = db.scalar(select(Material).where(Material.company_id == company.id, Material.name == name))
+        if not material:
+            material = Material(company_id=company.id, name=name, unit=unit, current_cost=None, min_stock=Decimal("0"))
+            db.add(material)
             db.flush()
-        materials[name] = m
+        materials[name] = material
 
     for supplier_name, material_names in LEGACY_SUPPLIER_MATERIALS.items():
         supplier = db.scalar(select(Supplier).where(Supplier.company_id == company.id, Supplier.name == supplier_name))
@@ -123,9 +123,10 @@ def seed(db: Session):
             if not exists:
                 db.add(SupplierMaterial(supplier_id=supplier.id, material_id=material.id))
 
-    # The only seeded technical sheet remains intentionally conservative.
-    # The legacy workbook identifies materials and purchases, but does not provide
-    # trustworthy per-product consumption quantities for every product.
+    # The legacy workbook supports material names and suppliers, but it does not
+    # provide a trustworthy per-product consumption quantity for every item.
+    # Only a conservative caneca sheet is seeded; the remaining technical sheets
+    # stay for the user to confirm instead of fabricating consumption data.
     product = db.scalar(select(Product).where(Product.company_id == company.id, Product.name == "Caneca personalizada"))
     if not product:
         product = Product(
@@ -138,7 +139,30 @@ def seed(db: Session):
         )
         db.add(product)
         db.flush()
-        db.add(TechnicalSheetItem(product_id=product.id, material_id=materials["Caneca Cerâmica Branca 325ml"].id, qty=Decimal("1"), version=1))
-        db.add(TechnicalSheetItem(product_id=product.id, material_id=materials["Caixa para caneca"].id, qty=Decimal("1"), version=1))
+        db.add(
+            TechnicalSheetItem(
+                product_id=product.id,
+                material_id=materials["Caneca Cerâmica Branca 325ml"].id,
+                qty=Decimal("1"),
+                version=1,
+            )
+        )
+        db.add(
+            TechnicalSheetItem(
+                product_id=product.id,
+                material_id=materials["Caixa para caneca"].id,
+                qty=Decimal("1"),
+                version=1,
+            )
+        )
 
     db.commit()
+
+    # Route/UI enhancements are installed at application startup after the core
+    # FastAPI routes exist. This keeps the existing MVP stable while replacing
+    # only the customer, supplier and inline-customer flows.
+    main_module = sys.modules.get("app.main")
+    if main_module is not None:
+        from .runtime_enhancements import install_runtime_enhancements
+
+        install_runtime_enhancements(main_module)
