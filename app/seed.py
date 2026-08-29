@@ -160,11 +160,11 @@ def seed(db: Session):
 
     db.commit()
 
-    # Route/UI enhancements are installed at application startup after the core
-    # FastAPI routes exist. This keeps the existing MVP stable while replacing
-    # only the customer, supplier and inline-customer flows.
+    # Install production-facing refinements after the core FastAPI routes exist.
     main_module = sys.modules.get("app.main")
     if main_module is not None:
         from .runtime_enhancements import install_runtime_enhancements
+        from .dashboard_enhancements import install_dashboard_enhancements
 
         install_runtime_enhancements(main_module)
+        install_dashboard_enhancements(main_module)
