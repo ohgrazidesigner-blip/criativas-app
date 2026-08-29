@@ -79,8 +79,8 @@ def test_orders_support_combined_filters(manager):
         },
     )
     assert response.status_code == 200
-    assert "Cliente Filtro" in response.text
-    assert "Cliente Teste" not in response.text
+    assert '<td data-label="Cliente">Cliente Filtro</td>' in response.text
+    assert '<td data-label="Cliente">Cliente Teste</td>' not in response.text
 
 
 def test_inventory_low_stock_badge_and_filter(manager):
@@ -116,7 +116,6 @@ def test_material_category_is_persisted(manager):
         assignment = db.get(MaterialCategoryAssignment, material.id)
         assert assignment is not None
         assert assignment.category.name == "Embalagens"
-
 
 
 def test_catalog_uses_2026_grouped_view(manager):
