@@ -45,6 +45,9 @@ LEGACY_MATERIALS = [
     ("Tinta sublimática preta 100ml", "frasco"),
 ]
 
+# Supplier/material links are intentionally limited to relationships explicitly
+# supported by the legacy COMPRAS sheet. Historical prices and balances are not
+# promoted to current truth because the workbook contains old/ambiguous values.
 LEGACY_SUPPLIER_MATERIALS = {
     "Paint Color": [
         "Tecido Sublimático OBM A4",
@@ -56,7 +59,7 @@ LEGACY_SUPPLIER_MATERIALS = {
         "Caixa para caneca",
     ],
     "Economizou": ["Papel sublimático A4", "Tinta sublimática CMYK 100ml"],
-    "Provideo": ["Papel sublimático A4", "Tinta sublimática CMYK 100ml", "Caneca Cerâmica Branca 325ml"],
+    "Provideo": ["Caneca Cerâmica Branca 325ml"],
     "Cia do Silk": ["Caneca Cerâmica Branca 325ml", "Caneca polímero branca 325ml", "Caixa para caneca com cola"],
     "Atacado das Camisas": ["Camisa poliéster branca M"],
     "Kasa Andrade": [
