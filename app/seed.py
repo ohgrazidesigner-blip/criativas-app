@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 from .auth import hash_password
 from .enhancement_models import SupplierMaterial
 from .models import Company, Material, Product, Role, Supplier, TechnicalSheetItem, User
+from .real_costs import REAL_PRODUCT_COST_REFERENCES, VERIFIED_CURRENT_MATERIAL_COSTS
 
 
 # Most names and supplier relationships below come from the legacy Criativas
@@ -77,6 +78,25 @@ LEGACY_SUPPLIER_MATERIALS = {
 }
 
 
+def _ensure_sheet_item(db: Session, product: Product, material: Material, quantity: Decimal = Decimal("1")) -> None:
+    exists = db.scalar(
+        select(TechnicalSheetItem).where(
+            TechnicalSheetItem.product_id == product.id,
+            TechnicalSheetItem.material_id == material.id,
+            TechnicalSheetItem.version == 1,
+        )
+    )
+    if not exists:
+        db.add(
+            TechnicalSheetItem(
+                product_id=product.id,
+                material_id=material.id,
+                qty=quantity,
+                version=1,
+            )
+        )
+
+
 def seed(db: Session):
     company = db.scalar(select(Company).limit(1))
     if not company:
@@ -111,6 +131,14 @@ def seed(db: Session):
             db.flush()
         materials[name] = material
 
+    # Owner-provided 2026 CSV values are more current than the legacy workbook.
+    # Apply them only while current_cost is still empty, so future receipts/manual
+    # corrections are never overwritten at application startup.
+    for material_name, real_cost in VERIFIED_CURRENT_MATERIAL_COSTS.items():
+        material = materials.get(material_name)
+        if material is not None and material.current_cost is None:
+            material.current_cost = real_cost
+
     for supplier_name, material_names in LEGACY_SUPPLIER_MATERIALS.items():
         supplier = db.scalar(select(Supplier).where(Supplier.company_id == company.id, Supplier.name == supplier_name))
         if not supplier:
@@ -128,38 +156,46 @@ def seed(db: Session):
             if not exists:
                 db.add(SupplierMaterial(supplier_id=supplier.id, material_id=material.id))
 
-    # The legacy workbook supports material names and suppliers, but it does not
-    # provide a trustworthy per-product consumption quantity for every item.
-    # Only a conservative caneca sheet is seeded; the remaining technical sheets
-    # stay for the user to confirm instead of fabricating consumption data.
+    # Caneca is an active product already represented in the operational MVP.
+    caneca_ref = REAL_PRODUCT_COST_REFERENCES["Caneca personalizada"]
     product = db.scalar(select(Product).where(Product.company_id == company.id, Product.name == "Caneca personalizada"))
     if not product:
         product = Product(
             company_id=company.id,
             name="Caneca personalizada",
-            base_price=Decimal("0"),
+            base_price=caneca_ref["sale_price"],
             labor_minutes=12,
             expected_loss_rate=Decimal("0"),
             standard_lead_time_days=3,
         )
         db.add(product)
         db.flush()
-        db.add(
-            TechnicalSheetItem(
-                product_id=product.id,
-                material_id=materials["Caneca Cerâmica Branca 325ml"].id,
-                qty=Decimal("1"),
-                version=1,
-            )
+    elif Decimal(product.base_price or 0) == 0:
+        product.base_price = caneca_ref["sale_price"]
+
+    _ensure_sheet_item(db, product, materials["Caneca Cerâmica Branca 325ml"])
+    _ensure_sheet_item(db, product, materials["Caixa para caneca"])
+
+    # The real CSV also supports a shirt product and its base material cost.
+    # It starts inactive because the source does not provide a trustworthy full
+    # physical consumption sheet (paper/tinta quantities) or labor time.
+    camisa_ref = REAL_PRODUCT_COST_REFERENCES["Camisa personalizada"]
+    camisa = db.scalar(select(Product).where(Product.company_id == company.id, Product.name == "Camisa personalizada"))
+    if not camisa:
+        camisa = Product(
+            company_id=company.id,
+            name="Camisa personalizada",
+            base_price=camisa_ref["sale_price"],
+            labor_minutes=0,
+            expected_loss_rate=Decimal("0"),
+            standard_lead_time_days=3,
+            active=False,
         )
-        db.add(
-            TechnicalSheetItem(
-                product_id=product.id,
-                material_id=materials["Caixa para caneca"].id,
-                qty=Decimal("1"),
-                version=1,
-            )
-        )
+        db.add(camisa)
+        db.flush()
+        _ensure_sheet_item(db, camisa, materials["Camisa poliéster branca M"])
+    elif Decimal(camisa.base_price or 0) == 0:
+        camisa.base_price = camisa_ref["sale_price"]
 
     db.commit()
 
@@ -168,6 +204,8 @@ def seed(db: Session):
     if main_module is not None:
         from .runtime_enhancements import install_runtime_enhancements
         from .dashboard_enhancements import install_dashboard_enhancements
+        from .catalog_enhancements import install_catalog_enhancements
 
         install_runtime_enhancements(main_module)
         install_dashboard_enhancements(main_module)
+        install_catalog_enhancements(main_module)
